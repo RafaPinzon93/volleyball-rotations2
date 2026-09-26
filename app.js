@@ -6,10 +6,22 @@
   const NS = 'http://www.w3.org/2000/svg';
   const ZONES = {1:[490,405],2:[490,175],3:[350,175],4:[210,175],5:[210,405],6:[350,405]};
   const ORDER = [1,6,5,4,3,2];
+  // Receiving examples keyed by the ACTIVE setter's rotational slot.
+  // Coordinates represent floor-position anchors, not six fixed playing boxes.
+  // The 6–2 repeats the three back-row-setter patterns with the setters exchanged.
+  const RECEIVE = {
+    1:{1:[550,425],2:[500,330],3:[350,155],4:[190,155],5:[205,355],6:[350,405]},
+    6:{1:[515,370],2:[530,145],3:[420,145],4:[205,330],5:[350,405],6:[440,235]},
+    5:{1:[520,365],2:[525,150],3:[230,335],4:[160,145],5:[245,235],6:[370,410]},
+    4:{1:[555,445],2:[525,335],3:[455,215],4:[370,140],5:[195,350],6:[350,405]},
+    3:{1:[515,350],2:[530,160],3:[435,145],4:[195,330],5:[320,405],6:[420,455]},
+    2:{1:[515,355],2:[470,145],3:[215,330],4:[165,145],5:[155,450],6:[350,405]}
+  };
+  const SERVE_CONTACT = 3;
   const COLORS = {S:'#356c52',OH:'#6687b4',MB:'#bb9451',OPP:'#ca7964',L:'#9a82b1'};
   const NAMES = {S:'Setter',OH:'Outside hitter',MB:'Middle blocker',OPP:'Opposite',L:'Libero'};
   const PHASES = [
-    {time:0, name:'Before the serve', short:'Line up'},
+    {time:0, name:'Serve-receive setup', short:'Ready'},
     {time:3, name:'Receive & transition', short:'Receive'},
     {time:6, name:'The setter takes over', short:'Set'},
     {time:9, name:'Approach & attack', short:'Attack'},
@@ -17,10 +29,10 @@
     {time:15, name:'Rotate clockwise', short:'Rotate'}
   ];
   const DURATION = 18;
-  const state = {system:'5-1',rotation:0,role:'all',player:null,libero:true,paths:true,speed:1,phase:0,playing:false};
+  const state = {system:'5-1',rotation:0,role:'all',player:null,libero:true,paths:true,speed:1,phase:0,playing:false,startingView:'receive'};
   let timeline, roster = [], motion = [], lastPhase = -1, lastExchange = false;
   const ball = {x:505,y:26,alpha:1};
-  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const reducedMotion = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   function zoneAt(base, rotation) { return ORDER[(ORDER.indexOf(base) + rotation) % 6]; }
   function front(zone) { return zone >= 2 && zone <= 4; }
@@ -38,14 +50,32 @@
     });
   }
 
+  function receiveFormation(players) {
+    const template = RECEIVE[players.find(p => p.isSetter).zone];
+    return Object.fromEntries(players.map(p => [p.id,[...template[p.zone]]]));
+  }
+
+  function overlapChecks(players, positions) {
+    const byZone = Object.fromEntries(players.map(p => [p.zone,p]));
+    // Strict separation is intentional: real rules allow some feet to be level.
+    return [[4,3,'x'],[3,2,'x'],[5,6,'x'],[6,1,'x'],[4,5,'y'],[3,6,'y'],[2,1,'y']].map(([a,b,axis]) => {
+      const first=byZone[a], second=byZone[b], index=axis==='x'?0:1;
+      const margin=positions[second.id][index]-positions[first.id][index];
+      return {first,second,axis,margin,legal:margin>0};
+    });
+  }
+
   function formation(players, phase) {
+    if (phase === 'ready') return receiveFormation(players);
     const positions = {};
-    const outsides = players.filter(p => p.role === 'OH').sort((a,b) => ZONES[a.zone][0]-ZONES[b.zone][0]);
+    const ready = receiveFormation(players);
     players.forEach(p => {
-      if (phase === 'ready') positions[p.id] = [...ZONES[p.zone]];
+      if (phase === 'order') positions[p.id] = [...ZONES[p.zone]];
+      // Passers are already in their lanes before the serve. They do not sprint
+      // from a theoretical zone to a new passing spot while the serve is flying.
+      else if (phase === 'receive' && (p.role === 'OH' || (p.role === 'MB' && !p.isFront))) positions[p.id] = [...ready[p.id]];
       else if (p.isSetter) positions[p.id] = [470,150];
-      else if (p.role === 'MB' && !p.isFront) positions[p.id] = phase === 'receive' ? [350,405] : [350,430];
-      else if (p.role === 'OH' && phase === 'receive') positions[p.id] = [p.id === outsides[0].id ? 205 : 495,355];
+      else if (p.role === 'MB' && !p.isFront) positions[p.id] = [350,430];
       else if (p.isFront && p.role === 'MB') positions[p.id] = phase === 'attack' ? [340,138] : [335,185];
       else if (p.isFront && p.role === 'OH') positions[p.id] = phase === 'attack' ? [172,132] : [168,237];
       else if (p.isFront && p.displayRole === 'OPP') positions[p.id] = phase === 'attack' ? [533,150] : [535,225];
@@ -76,6 +106,19 @@
     const setter = activeSetter();
     const setterName = setter.code;
     const selected = state.player && roster.find(p => p.id === state.player);
+    if (state.phase === 0) {
+      if (state.startingView === 'order') return 'This is the rotation-order diagram, not a passing formation. Press play to see the team arrange legally before the server hits the ball.';
+      const checks = overlapChecks(roster,receiveFormation(roster));
+      const player = selected || (role === 'S' ? setter : null);
+      if (player) {
+        const relationships = checks.filter(c => c.first.id===player.id || c.second.id===player.id).map(c => {
+          const isFirst=c.first.id===player.id;
+          return `${isFirst ? (c.axis==='x'?'left of':'ahead of') : (c.axis==='x'?'right of':'behind')} ${(isFirst?c.second:c.first).code}`;
+        });
+        return `${player.code} is still in rotational slot ${player.zone}: stay ${relationships.join(', ')} until the SERVER contacts the ball. Your slot does not require standing in that numbered area.`;
+      }
+      return `The outsides and ${state.libero?'libero':'back-row middle'} already cover three passing lanes. ${setter.code} waits in a legal release position. Hold relative order until the server hits the ball.`;
+    }
     if (role === 'S' && state.system === '6-2' && selected?.isFront) {
       return [
         `${selected.code} is front row in zone ${selected.zone}, so you play right-side hitter. ${setterName} is the back-row setter for this rally.`,
@@ -173,6 +216,7 @@
 
   function createPlayers() {
     $('#players').replaceChildren();
+    const start=formation(roster,state.startingView==='order'?'order':'ready');
     motion = roster.map(p => {
       const node = svgElement('g',{class:'player',role:'button',tabindex:0,'data-player':p.id},$('#players'));
       svgElement('circle',{class:'focus-ring',r:34},node);
@@ -188,7 +232,7 @@
       };
       node.addEventListener('click',focus);
       node.addEventListener('keydown',event => {if(event.key === 'Enter' || event.key === ' '){event.preventDefault();focus();}});
-      return {id:p.id,node,x:ZONES[p.zone][0],y:ZONES[p.zone][1]};
+      return {id:p.id,node,x:start[p.id][0],y:start[p.id][1]};
     });
   }
 
@@ -207,16 +251,35 @@
     const container = $('#movement-paths');container.replaceChildren();
     if (!state.paths) return;
     const targets = formation(roster,state.phase <= 1 ? 'receive' : state.phase <= 2 ? 'set' : 'attack');
+    const starts = formation(roster,state.phase <= 1 ? 'ready' : state.phase === 2 ? 'receive' : 'set');
     const focused = focusedPlayers().map(p => p.id);
     roster.forEach(p => {
       if (state.role !== 'all' && !focused.includes(p.id)) return;
-      let start = ZONES[p.zone], end = targets[p.id];
+      let start = starts[p.id], end = targets[p.id];
+      if(state.phase===0 && state.startingView==='order') {start=ZONES[p.zone];end=formation(roster,'ready')[p.id];}
       if(state.phase >= 4) {start=ZONES[p.zone];end=ZONES[zoneAt(p.base,(state.rotation+1)%6)];}
       if(Math.hypot(end[0]-start[0],end[1]-start[1]) < 22) return;
       const dx=end[0]-start[0],dy=end[1]-start[1];
       const control=[(start[0]+end[0])/2-dy*.1,(start[1]+end[1])/2+dx*.1];
       svgElement('path',{d:`M${start[0]} ${start[1]} Q${control[0]} ${control[1]} ${end[0]} ${end[1]}`},container);
     });
+  }
+
+  function updateFormationLesson() {
+    const checks=overlapChecks(roster,receiveFormation(roster));
+    $('#overlap-summary').textContent=`Why this receive formation is legal · ${checks.filter(c=>c.legal).length}/7 relationships`;
+    $('#overlap-checks').innerHTML=checks.map(c=>`<li><span aria-hidden="true">${c.legal?'✓':'!'}</span> ${c.first.code} <span class="relation">${c.axis==='x'?'left of':'closer to net than'}</span> ${c.second.code}</li>`).join('');
+    const zone=activeSetter().zone;
+    const explanations={
+      1:'The setter stays behind the right-side outside passer. There is a longer release here: moving closer to the net before contact would overlap that passer.',
+      6:'The setter pushes forward between the two back-row teammates, while staying behind the front-middle player. Front-row and back-row players can interleave.',
+      5:'The setter pushes forward behind the front-left middle and stays left of the back-middle outside. This shortens the release without crossing a required neighbor.',
+      4:'The front-row setter shifts toward the setting target. The middle and front-row outside remain to the setter’s right, preserving the front-row order.',
+      3:'The setter waits close to the target, between the front-row outside and middle. The opposite stays deeper in the corresponding back-middle slot.',
+      2:'The setter is already near the target on the right. The front-row outside drops into passing while staying ahead of the corresponding back-row outside.'
+    };
+    $('#formation-explanation').textContent=explanations[zone];
+    $$('[data-starting-view]').forEach(b=>{const active=b.dataset.startingView===state.startingView;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active));});
   }
 
   function updateIdentity(exchanged) {
@@ -247,6 +310,8 @@
     if(phase !== lastPhase) {
       state.phase=phase;lastPhase=phase;
       $('#court-phase').textContent=PHASES[phase].name;
+      $('#contact-status').textContent=phase===0?'BEFORE SERVE · HOLD ORDER':phase<4?'SERVE HIT · FREE TO MOVE':'RALLY OVER · BALL DEAD';
+      $('#contact-status').classList.toggle('released',phase>0&&phase<4);
       $$('[data-phase]').forEach(b=>{const active=Number(b.dataset.phase)===phase;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active));});
       updateCoach();drawPaths();
     }
@@ -265,7 +330,7 @@
     lastPhase=-1;lastExchange=false;state.phase=0;
     createPlayers();applyFocus();updateIdentity(false);
     Object.assign(ball,{x:505,y:26,alpha:1});
-    const ready=formation(roster,'ready'),receive=formation(roster,'receive'),set=formation(roster,'set'),attack=formation(roster,'attack');
+    const ready=formation(roster,'ready'),order=formation(roster,'order'),receive=formation(roster,'receive'),set=formation(roster,'set'),attack=formation(roster,'attack');
     const next=lineup(state.system,(state.rotation+1)%6,state.libero);
     const rotationTargets=Object.fromEntries(next.map(p=>[p.id,ZONES[p.zone]]));
     const tl=gsap.timeline({paused:true,onUpdate:render,onComplete:()=>{
@@ -274,9 +339,12 @@
     }});
     timeline=tl;
     const clock={time:0};tl.to(clock,{time:DURATION,duration:DURATION,ease:'none'},0);
-    tweenPositions(tl,receive,3,1.5);
-    tl.to(ball,{x:350,y:387,duration:1.6,ease:'power1.in'},3);
-    tl.to(ball,{x:408,y:233,duration:.85,ease:'power1.out'},4.85);
+    if(state.startingView==='order')tweenPositions(tl,ready,.5,1.7);
+    tweenPositions(tl,receive,SERVE_CONTACT,1.5);
+    const passer=roster.find(p=>p.role==='MB'&&!p.isFront);
+    const [passX,passY]=receive[passer.id];
+    tl.to(ball,{x:passX,y:passY-18,duration:1.6,ease:'power1.in'},SERVE_CONTACT);
+    tl.to(ball,{x:(passX+470)/2,y:233,duration:.85,ease:'power1.out'},4.85);
     tl.to(ball,{x:470,y:129,duration:.65,ease:'power1.in'},5.7);
     tweenPositions(tl,set,5.7,1.4);
     tl.to(ball,{x:345,y:69,duration:1,ease:'power1.out'},6.5);
@@ -284,7 +352,8 @@
     tweenPositions(tl,attack,8.1,.95);
     tl.to(ball,{x:420,y:9,duration:1.1,ease:'power2.in'},9.2);
     tl.to(ball,{alpha:0,duration:.4},11.7);
-    tweenPositions(tl,ready,12.7,1.5);
+    // Return to the order diagram only once the rally is dead, to teach rotation.
+    tweenPositions(tl,order,12.7,1.5);
     tweenPositions(tl,rotationTargets,15.15,1.9);
     tl.timeScale(state.speed);
     $('#court-title').textContent=`Rotation ${state.rotation+1}`;
@@ -292,7 +361,7 @@
     $('#setter-badge').innerHTML=`<span></span> ${state.system === '6-2' ? setter.code+' sets from the back row' : 'Setter in the '+(setter.isFront ? 'front' : 'back')+' row'}`;
     $$('[data-rotation]').forEach(button=>{const active=Number(button.dataset.rotation)===state.rotation;button.classList.toggle('active',active);button.setAttribute('aria-pressed',String(active));});
     $$('[data-system]').forEach(button=>{const active=button.dataset.system===state.system;button.classList.toggle('active',active);button.setAttribute('aria-pressed',String(active));});
-    state.playing=autoplay;render();updateCoach();updatePlayButton();
+    state.playing=autoplay;render();updateCoach();updatePlayButton();updateFormationLesson();
     if(autoplay)tl.play(0);
   }
 
@@ -312,6 +381,7 @@
     }
     $('#rotations').innerHTML=Array.from({length:6},(_,i)=>`<button data-rotation="${i}" aria-label="Rotation ${i+1}" aria-pressed="${i===0}">${i+1}</button>`).join('');
     $$('[data-system]').forEach(b=>b.addEventListener('click',()=>{state.system=b.dataset.system;state.player=null;buildTimeline();}));
+    $$('[data-starting-view]').forEach(b=>b.addEventListener('click',()=>{state.startingView=b.dataset.startingView;buildTimeline();}));
     $$('[data-role]').forEach(b=>b.addEventListener('click',()=>{
       state.role=b.dataset.role;state.player=null;
       if(state.role==='L'&&!state.libero){state.libero=true;$('#libero').checked=true;buildTimeline(false);}
@@ -340,6 +410,6 @@
     buildTimeline();
   }
   // Pure model functions are exposed for verification and future lesson extensions.
-  window.SideoutModel=Object.freeze({lineup,zoneAt,formation,front});
-  init();
+  globalThis.SideoutModel=Object.freeze({lineup,zoneAt,formation,front,receiveFormation,overlapChecks});
+  if(typeof document!=='undefined')init();
 })();

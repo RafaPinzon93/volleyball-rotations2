@@ -18,6 +18,8 @@ GitHub Pages must use **GitHub Actions** as its publishing source. To publish fu
 - Focus on a role or select an individual player on the court. F / B badges indicate front- and back-row status.
 - Play, pause, scrub, or jump to a rally phase. Speed ranges from **0.25× to 2×** and can change during playback.
 - Toggle movement paths, zone numbers, and libero replacements.
+- Compare **Serve receive** (the default, with three passers already in place) and **Rotation order** (the theoretical slots). The latter moves into the receive formation before the serve is hit at 0:03.
+- Expand **Why this receive formation is legal** to see all seven relative-order checks. Release begins at server contact, not at the first pass. Rotational row and physical front/back zones are different concepts.
 - With **Continue rotations** enabled, each completed example advances to the next rotation. Disable it to stop at the end of one example.
 - Press **Space** to play/pause or **← / →** to change rotations when focus is outside a control. All controls and court players also support keyboard navigation.
 - Open **How it works** for the field guide. Reduced-motion preferences shorten player transitions; playback never starts automatically.
@@ -27,6 +29,10 @@ GitHub Pages must use **GitHub Actions** as its publishing source. To publish fu
 These are simplified receiving-rally examples, not a complete match simulation or a prescribed serve-receive formation. Every example uses a pass from the back-row middle/libero, a set to the front-row outside, and a successful attack. The team then rotates because it won the right to serve. The next lesson assumes the team is receiving again; serving rallies between lessons are omitted.
 
 The 5–1 uses one setter throughout. The 6–2 uses two opposite setter/hitters without substitutions: the back-row setter sets, and the front-row setter plays right-side hitter. The optional libero replaces a back-row middle. Actual libero exchanges are condensed at the end of the rotation animation; competition timing and service rules are not simulated. Paths are schematic, not collision-free coaching routes. Before serve contact, the diagram preserves receiving-team row and lateral order.
+
+Receive formations are conservative teaching examples with space between markers, not a claim of optimal foot placement or the only formation a team can use. The setter pushes forward when legal; in rotation 1, staying behind the outside passer still requires a longer release. Marker anchors satisfy strict left/right and front/back inequalities. Actual officials judge the feet under [FIVB rules 2025–2028, §7.4](https://www.fivb.com/wp-content/uploads/2025/01/FIVB-Volleyball_Rules2025_2028-EN.pdf), which also permit certain level foot positions.
+
+Run `python3 tests/run.py` to validate all 24 system/rotation/libero combinations, deliberate overlap faults, passing lanes, and the legal transition from the order diagram. The checks also run before deployment.
 
 Rules reference: [USA Volleyball](https://usavolleyball.org/play/rules-of-volleyball/).
 

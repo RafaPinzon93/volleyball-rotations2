@@ -24,6 +24,7 @@ jobs:
 
       - name: Build the standalone trainer
         run: |
+          python3 tests/run.py
           python3 build_standalone.py
           mkdir -p _site
           cp volleyball-trainer.html _site/index.html

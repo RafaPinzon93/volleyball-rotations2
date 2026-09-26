@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#234c3e">
+  <meta name="description" content="Learn 5–1 and 6–2 volleyball rotations on an interactive court. Follow any position, slow down the rally, and learn where to move and why.">
+  <title>Sideout — Volleyball Rotation Lab</title>
+  <link rel="stylesheet" href="styles.css">
+  <script defer src="vendor/gsap.min.js"></script>
+  <script defer src="app.js"></script>
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="./index.html" aria-label="Sideout home"><svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="17"/><path d="M20 3c-7 8-8 16-3 25M5 12c9-2 18 1 25 8M6 30c3-10 9-15 19-17M35 11c-1 11-6 19-16 25M11 36c10 0 19-5 25-13"/></svg><span>sideout<span class="brand-dot">.</span></span><span class="brand-divider"></span><span class="brand-sub">ROTATION LAB</span></a>
+    <nav aria-label="Main navigation"><span class="nav-active">The playground</span><button class="text-button" id="guide-open">How it works <span aria-hidden="true">↗</span></button></nav>
+  </header>
+
+  <main>
+    <section class="intro">
+      <div><div class="eyebrow"><span></span> A LITTLE COURT TIME. A LOT MORE CONFIDENCE.</div><h1>Find your place.<br class="mobile-break"> <em>Own the next play.</em></h1><p>See the rotation. Follow your role. Make the game click.</p></div>
+      <div class="intro-note"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M8 31c-8-18 20-29 30-13 8 15-8 28-22 19M8 31l-1-9M8 31l10-3"/></svg><span>Less memorizing.<br>More understanding.</span></div>
+    </section>
+
+    <section class="workspace" aria-label="Rotation playground">
+      <div class="lab">
+        <div class="lab-toolbar">
+          <div class="system-control"><span class="control-label" id="system-label">YOUR SYSTEM</span><div class="segmented" role="group" aria-labelledby="system-label"><button data-system="5-1" class="active" aria-pressed="true">5–1 <span>One setter</span></button><button data-system="6-2" aria-pressed="false">6–2 <span>Two setters</span></button></div></div>
+          <button class="icon-button" id="reset" aria-label="Reset lesson" title="Reset lesson"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10a8 8 0 1 1 1 7M4 4v6h6"/></svg></button>
+        </div>
+        <div class="court-heading"><div><span class="live-dot"></span><strong id="court-title">Rotation 1</strong><span class="court-heading-divider">/</span><span id="court-phase">Before the serve</span></div><span class="view-label">YOUR SIDE · TOP VIEW</span></div>
+
+        <div class="court-wrap">
+          <div class="court-badge" id="setter-badge"><span></span> Setter in the back row</div>
+          <svg id="court" viewBox="0 0 700 560" aria-label="Interactive volleyball court. Select a player to learn their role.">
+            <defs>
+              <pattern id="floor" width="22" height="22" patternUnits="userSpaceOnUse"><path d="M22 0H0V22" fill="none" stroke="#fff" stroke-opacity=".08"/></pattern>
+              <pattern id="net-grid" width="9" height="7" patternUnits="userSpaceOnUse"><path d="M9 0H0V7" fill="none" stroke="#667a70" stroke-width=".8"/></pattern>
+              <filter id="player-shadow" x="-50%" y="-50%" width="200%" height="220%"><feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#264034" flood-opacity=".16"/></filter>
+              <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M1 1l8 4-8 4" fill="none" stroke="#4a7363" stroke-width="1.6"/></marker>
+            </defs>
+            <rect x="0" y="0" width="700" height="560" fill="#edf1e9"/>
+            <rect x="115" y="-40" width="470" height="124" fill="#dce5d9"/>
+            <path d="M115 0v82h470V0" fill="none" stroke="#fff" stroke-width="3" opacity=".65"/>
+            <text x="350" y="43" text-anchor="middle" class="opponent-label">OPPONENT’S SIDE</text>
+            <rect x="115" y="88" width="470" height="440" fill="#e6b797"/>
+            <rect x="115" y="88" width="470" height="147" fill="#ebc5a9"/>
+            <rect x="115" y="88" width="470" height="440" fill="url(#floor)"/>
+            <rect x="115" y="88" width="470" height="440" fill="none" stroke="#fffdf7" stroke-width="3"/>
+            <line x1="115" y1="235" x2="585" y2="235" stroke="#fffdf7" stroke-width="3"/>
+            <g id="zone-labels" class="zone-labels"><text x="152" y="124">4</text><text x="350" y="124">3</text><text x="548" y="124">2</text><text x="152" y="507">5</text><text x="350" y="507">6</text><text x="548" y="507">1</text></g>
+            <text x="603" y="237" class="line-label">3 m</text><text x="603" y="92" class="line-label">NET</text>
+            <text transform="translate(78 160) rotate(-90)" text-anchor="middle" class="row-label">FRONT ROW</text><text transform="translate(78 384) rotate(-90)" text-anchor="middle" class="row-label">BACK ROW</text>
+            <g id="movement-paths" fill="none" stroke="#4a7363" stroke-width="2" stroke-dasharray="5 7" opacity=".5" marker-end="url(#arrow)"></g>
+            <g class="net"><rect x="102" y="76" width="496" height="15" fill="url(#net-grid)"/><path d="M100 76h500M100 91h500" stroke="#fff" stroke-width="3"/><path d="M104 72v26M596 72v26" stroke="#506b5c" stroke-width="5" stroke-linecap="round"/></g>
+            <g id="players"></g>
+            <g id="ball" transform="translate(505 26)" aria-hidden="true"><circle r="11" fill="#fffef4" stroke="#384d40" stroke-width="1.5"/><path d="M-8-7C0-7 5-2 5 8M-10 3C-4-3 3-4 9-2M-2 10C-6 4-5-3 0-10" fill="none" stroke="#c3a047" stroke-width="2"/></g>
+          </svg>
+          <div class="court-bottom-label"><span><span class="small-ball">●</span> Click a player to follow their journey</span><span>9 × 9 m</span></div>
+        </div>
+
+        <div class="court-options"><label class="toggle-label"><input type="checkbox" id="paths" checked><span class="toggle"></span>Movement paths</label><label class="toggle-label"><input type="checkbox" id="libero" checked><span class="toggle"></span>Use libero</label><button class="text-button small" id="zones" aria-pressed="true">Hide zones</button></div>
+
+        <div class="playback">
+          <div class="phase-steps" role="group" aria-label="Jump to rally phase"><button data-phase="0" class="active"><span>01</span> Line up</button><button data-phase="1"><span>02</span> Receive</button><button data-phase="2"><span>03</span> Set</button><button data-phase="3"><span>04</span> Attack</button><button data-phase="4"><span>05</span> Side-out</button><button data-phase="5"><span>06</span> Rotate</button></div>
+          <label class="sr-only" for="scrubber">Rally progress</label><input type="range" min="0" max="18" value="0" step="0.01" id="scrubber" aria-valuetext="Line up, 0 seconds">
+          <div class="playback-bottom"><div class="transport"><button class="icon-button" id="previous" aria-label="Previous rotation" title="Previous rotation"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 5v14M18 5l-9 7 9 7z"/></svg></button><button class="play-button" id="play"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 10 7-10 7z"/></svg><span>Play rally</span></button><button class="icon-button" id="next" aria-label="Next rotation" title="Next rotation"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 5v14M6 5l9 7-9 7z"/></svg></button><span class="time-display" id="time-display">0:00 / 0:18</span></div><div class="speed-control"><label for="speed">Speed</label><select id="speed" aria-label="Playback speed"><option value="0.25">0.25×</option><option value="0.5">0.5×</option><option value="0.75">0.75×</option><option value="1" selected>1×</option><option value="1.5">1.5×</option><option value="2">2×</option></select></div></div>
+          <div class="rotation-strip"><span class="control-label">ROTATION</span><div id="rotations" role="group" aria-label="Choose rotation"></div><label class="loop-label"><input type="checkbox" id="continuous" checked> Continue rotations</label></div>
+        </div>
+      </div>
+
+      <aside class="coach-panel" aria-label="Position coaching">
+        <div class="focus-heading"><span class="eyebrow">THE GAME, THROUGH YOUR EYES</span><h2>Choose your focus<span>.</span></h2><p>One court. Six different perspectives.</p></div>
+        <div class="role-grid" role="group" aria-label="Focus on a position"><button data-role="all" class="active" aria-pressed="true"><span class="role-icon all-icon">✣</span>Whole team</button><button data-role="S" aria-pressed="false"><span class="role-icon setter">S</span>Setter</button><button data-role="OH" aria-pressed="false"><span class="role-icon outside">OH</span>Outside hitter</button><button data-role="MB" aria-pressed="false"><span class="role-icon middle">M</span>Middle blocker</button><button data-role="OPP" aria-pressed="false"><span class="role-icon opposite">OP</span>Opposite</button><button data-role="L" aria-pressed="false"><span class="role-icon libero">L</span>Libero</button></div>
+
+        <article class="coaching-card"><div class="card-eyebrow"><span id="focus-tag">THE BIG PICTURE</span><span class="outline-icon" aria-hidden="true">↗</span></div><h3 id="focus-title">Six players. One rhythm.</h3><p id="focus-description"></p><div class="focus-stats"><div><span id="stat-one-label">SYSTEM</span><strong id="stat-one-value">5 hitters · 1 setter</strong></div><div><span id="stat-two-label">AT THE NET</span><strong id="stat-two-value">3 attackers</strong></div></div><div class="now-card"><span class="now-label"><span class="live-dot"></span> RIGHT NOW</span><p id="phase-tip" aria-live="polite"></p></div></article>
+
+        <section class="tips-section"><h3><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18h6M10 21h4M8 14a6 6 0 1 1 8 0c-1 1-1 2-1 2H9s0-1-1-2z"/></svg>Small tips. Big difference.</h3><div id="tips"></div></section>
+        <div class="remember"><span aria-hidden="true">↻</span><div><strong>Rotate on the side-out.</strong><p>Win the right to serve, then move one spot clockwise. Your role stays with you.</p></div></div>
+      </aside>
+    </section>
+
+    <section class="lesson-note"><span class="note-icon" aria-hidden="true">i</span><p id="lesson-note">This is a simplified receiving-rally lesson, not a prescribed team formation. Start in rotational order, then move to your role after serve contact.</p><button class="text-button" id="rules-open">Know the basics <span aria-hidden="true">↗</span></button></section>
+    <footer><span class="footer-brand">sideout.</span><span>Built for the moment it all clicks.</span><span class="keyboard-hint"><kbd>space</kbd> play / pause <span>·</span> <kbd>←</kbd> <kbd>→</kbd> change rotation</span></footer>
+  </main>
+
+  <dialog id="guide"><div class="dialog-top"><span class="eyebrow">YOUR COURTSIDE FIELD GUIDE</span><button class="icon-button" id="guide-close" aria-label="Close guide">✕</button></div><h2>A few things that<br><em>make it click.</em></h2><div class="guide-grid"><section><span class="guide-number">01</span><h3>Rotation ≠ playing position</h3><p>The zones run 1 (right back), 2 (right front), 3 (middle front), 4 (left front), 5 (left back), 6 (middle back). After winning the right to serve, rotate 2 → 1 → 6 → 5 → 4 → 3 → 2.</p></section><section><span class="guide-number">02</span><h3>One setter or two?</h3><p>A 5–1 uses the same setter in all six rotations. A 6–2 uses two opposite setter/hitters: the back-row player sets and the front-row player attacks. This demo uses that no-substitution version.</p></section><section><span class="guide-number">03</span><h3>Wait for serve contact</h3><p>As the receiving team, keep your rotational order until the server contacts the ball: front-row players ahead of their corresponding back-row players, and left–middle–right order within each row. Then move to your playing positions.</p></section><section><span class="guide-number">04</span><h3>Your row still matters</h3><p>A back-row setter can move to the net to set, but cannot block or complete an above-net attack after taking off in the front zone. Moving forward does not make them a front-row player.</p></section><section><span class="guide-number">05</span><h3>The libero’s exchange</h3><p>Here, the libero replaces the back-row middle. Before that slot reaches the front row, the middle returns. The other middle can then be replaced in the back row. Real exchanges must follow competition timing rules; this lesson condenses them.</p></section><section><span class="guide-number">06</span><h3>Learn one rally at a time</h3><p>Choose a role or click a player. Use the phase buttons and timeline to pause anywhere. Each example ends with a successful side-out. The next lesson assumes your team is receiving again; actual games include serving rallies in between.</p></section></div><div class="guide-source">Rules reference: <a href="https://usavolleyball.org/play/rules-of-volleyball/" target="_blank" rel="noopener noreferrer">USA Volleyball ↗</a><p>These are teaching positions and schematic paths. Passing lanes, switches, defensive systems, and substitution rules vary by team and competition.</p></div></dialog>
+  <noscript><div class="error-banner">Enable JavaScript to use the interactive court and animation controls.</div></noscript>
+</body>
+</html>
